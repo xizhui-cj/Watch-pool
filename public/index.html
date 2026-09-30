@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>看啥好呢</title>
+<style>
+  /* ===== Apple Design Tokens ===== */
+  :root {
+    --canvas:            #f5f5f7;
+    --canvas-white:      #ffffff;
+    --surface-pearl:     #fafafc;
+    --ink:               #1d1d1f;
+    --body-muted:        #7a7a7a;
+    --hairline:          #e0e0e0;
+    --primary:           #0066cc;
+    --primary-hover:     #0071e3;
+    --on-primary:        #ffffff;
+    --font:              'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  }
+
+  /* ===== Reset & Base ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    font-family: var(--font);
+    background: var(--canvas);
+    min-height: 100vh;
+    color: var(--ink);
+    padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ===== Layout ===== */
+  .container { max-width: 800px; margin: 0 auto; }
+
+  /* ===== Header ===== */
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 {
+    font-size: 40px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .header p {
+    margin-top: 8px;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.37px;
+    color: var(--body-muted);
+  }
+
+  /* ===== Card ===== */
+  .card {
+    background: var(--canvas-white);
+    border-radius: 18px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+
+  /* ===== Random Zone ===== */
+  .random-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 48px 32px;
+  }
+  .random-zone .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .random-zone .prompt {
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.14;
+    color: var(--ink);
+    margin-bottom: 24px;
+  }
+  .random-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    font-family: var(--font);
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--on-primary);
+    background: var(--primary);
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: transform .15s, background .2s;
+  }
+  .random-btn:hover { background: var(--primary-hover); }
+  .random-btn:active { transform: scale(0.95); }
+  .random-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  /* ===== Result Area ===== */
+  .result-area {
+    margin-top: 24px;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .slot-text {
+    width: 100%;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: var(--canvas);
+    border-radius: 11px;
+    overflow: hidden;
+  }
+  .slot-item {
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--body-muted);
+    opacity: .5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%;
+  }
+  .slot-item.is-final {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    opacity: 1;
+  }
+  .roll-progress {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--hairline);
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity .25s;
+  }
+  .roll-progress.is-visible { opacity: 1; }
+  .progress-fill {
+    display: block;
+    width: var(--progress, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--primary);
+    transition: width .14s linear;
+  }
+  .result-tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .result-url {
+    color: var(--primary);
+    font-size: 17px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .result-url:hover { opacity: .7; }
+  .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ===== Buttons ===== */
+  .btn-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 22px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: transform .15s, background .2s;
+  }
+  .btn-pill:active { transform: scale(0.95); }
+  .btn-primary { background: var(--primary); color: var(--on-primary); }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-secondary { background: var(--surface-pearl); color: var(--ink); }
+  .btn-secondary:hover { background: var(--canvas); }
+  .btn-utility {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 15px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 400;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform .15s, background .2s;
+  }
+  .btn-utility:active { transform: scale(0.96); }
+  .btn-utility.active { background: var(--ink); color: var(--on-primary); }
+  .btn-utility:not(.active) { background: var(--surface-pearl); color: var(--ink); }
+  .btn-utility:not(.active):hover { background: var(--canvas); }
+
+  /* ===== Toolbar ===== */
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .toolbar-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ===== Add Form ===== */
+  .add-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .form-row input {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 8px;
+    border: 1px solid var(--hairline);
+    background: var(--canvas);
+    color: var(--ink);
+    font-size: 14px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .2s, background .2s;
+  }
+  .form-row input:focus { border-color: var(--primary); background: var(--canvas-white); }
+  .form-row input::placeholder { color: var(--body-muted); }
+  .form-row .btn-pill { height: 44px; white-space: nowrap; }
+
+  /* ===== Filter tags ===== */
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .filter-tag {
+    padding: 6px 14px;
+    border-radius: 9999px;
+    border: none;
+    background: var(--surface-pearl);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .filter-tag:hover { background: var(--canvas); }
+  .filter-tag.active { background: var(--primary); color: var(--on-primary); }
+
+  /* ===== List ===== */
+  .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .list-header h2 { font-size: 17px; font-weight: 600; color: var(--ink); }
+  .list-count { font-size: 14px; color: var(--body-muted); }
+  .video-list { display: flex; flex-direction: column; gap: 8px; }
+  .video-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    border-radius: 11px;
+    background: var(--surface-pearl);
+    transition: background .2s;
+  }
+  .video-item:hover { background: var(--canvas); }
+  .video-item .info { min-width: 0; }
+  .video-item .title {
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .video-item .title.watched { color: var(--body-muted); text-decoration: line-through; }
+  .video-item .meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .tag-chip {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--canvas);
+    color: var(--body-muted);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .video-item .actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .video-item .actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 9999px;
+    background: var(--canvas);
+    color: var(--body-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: color .2s, background .2s, transform .15s;
+  }
+  .video-item .actions button:active { transform: scale(0.9); }
+  .video-item .actions .btn-watched-sm:hover { color: var(--primary); }
+  .video-item .actions .btn-watched-sm.done { background: var(--primary); color: var(--on-primary); }
+  .video-item .actions .btn-edit-sm:hover { color: var(--primary); }
+  .video-item .actions .btn-del:hover { color: #c62828; }
+
+  /* ===== Empty state ===== */
+  .empty-state { text-align: center; padding: 48px 16px; color: var(--body-muted); }
+  .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ===== Modal ===== */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .modal-backdrop { visibility: hidden; }
+  .modal-backdrop.open { visibility: visible; opacity: 1; pointer-events: auto; }
+  .modal-box {
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    background: var(--canvas-white);
+    border-radius: 18px;
+    padding: 32px;
+    width: 90%;
+    max-width: 400px;
+    transform: translateY(8px) scale(.96);
+    transition: transform .3s;
+  }
+  .modal-backdrop.open .modal-box { transform: translateY(0) scale(1); }
+  .modal-box h3 { margin-bottom: 8px; font-size: 21px; font-weight: 600; color: var(--ink); }
+  .modal-box .modal-description { margin-bottom: 16px; color: var(--body-muted); font-size: 14px; line-height: 1.5; }
+  .modal-box textarea {
+    width: 100%;
+    height: 140px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--hairline);
+    background: var(--canvas);
+    color: var(--ink);
+    font-size: 12px;
+    font-family: var(--font);
+    resize: vertical;
+    outline: none;
+    transition: border-color .2s, background .2s;
+  }
+  .modal-box textarea:focus { border-color: var(--primary); background: var(--canvas-white); }
+  .edit-form { display: flex; flex-direction: column; gap: 12px; }
+  .edit-form input {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 8px;
+    border: 1px solid var(--hairline);
+    background: var(--canvas);
+    color: var(--ink);
+    font-size: 14px;
+    font-family: var(--font);
+    outline: none;
+  }
+  .edit-form input:focus { border-color: var(--primary); background: var(--canvas-white); }
+  .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
+
+  /* ===== Animations ===== */
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Private screening journal — paper, ink, vermilion. */
+  :root {
+    --canvas: #f2efe6; --canvas-white: #faf8f1; --surface-pearl: #ebe7dc;
+    --ink: #292c26; --body-muted: #6e7064; --hairline: #d5d2c5;
+    --primary: #b7442e; --primary-hover: #963522; --on-primary: #fffaf0;
+    --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    --serif: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
+  }
+  body { padding: 0 48px; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23807860' opacity='.055' filter='url(%23n)' d='M0 0h180v180H0z'/%3E%3C/svg%3E"); }
+  .container { max-width: 1180px; }
+  .masthead { display: flex; align-items: center; justify-content: space-between; padding: 25px 0; border-bottom: 1px solid var(--ink); font-size: 10px; letter-spacing: 2px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .brand-mark { color: var(--primary); font-size: 23px; line-height: 1; }
+  .header { text-align: left; margin: 0; padding: 48px 0 35px; display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+  .header h1 { font-family: var(--serif); font-size: clamp(40px, 5vw, 64px); font-weight: 500; letter-spacing: 3px; }
+  .header h1 span { color: var(--primary); }
+  .header p { font-size: 13px; line-height: 1.9; letter-spacing: 1px; }
+  .header-note { font-family: Georgia, serif; font-size: 16px; font-style: italic; color: var(--body-muted); text-align: right; line-height: 1.6; }
+  .card { border-radius: 0; background: transparent; padding: 0; margin-bottom: 0; }
+  .feature { display: grid; grid-template-columns: 1.08fr 1fr; border: 1px solid var(--hairline); background: var(--canvas-white); min-height: 390px; }
+  .poster { position: relative; overflow: hidden; min-height: 390px; background: #dcdccf; border-right: 1px solid var(--hairline); }
+  .poster::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0 3px, #343e3110 3px 4px); opacity: .4; }
+  .poster-top { position: absolute; top: 24px; left: 27px; right: 27px; display: flex; justify-content: space-between; font-size: 9px; letter-spacing: 2px; z-index: 2; }
+  .poster-sun { position: absolute; width: 158px; height: 158px; border-radius: 50%; background: #b94732; left: 17%; top: 70px; }
+  .poster-arch { position: absolute; width: 220px; height: 290px; background: #354a3d; border-radius: 120px 120px 0 0; transform: rotate(23deg); right: 12%; top: 115px; }
+  .poster-disc { position: absolute; width: 160px; height: 160px; border: 1px solid #eae6d5; border-radius: 50%; right: 8%; top: 160px; box-shadow: 0 0 0 14px #354a3d, 0 0 0 15px #eae6d580, 0 0 0 30px #354a3d, 0 0 0 31px #eae6d550; }
+  .poster-strip { position: absolute; width: 125%; height: 80px; background: #e9c16e; left: -12%; top: 242px; transform: rotate(-15deg); mix-blend-mode: multiply; }
+  .poster-word { position: absolute; left: 27px; bottom: 47px; font: italic 66px/.83 Georgia, serif; color: #f7f2df; letter-spacing: -4px; z-index: 2; }
+  .poster-caption { position: absolute; left: 29px; bottom: 20px; font-size: 9px; letter-spacing: 3px; color: #f7f2df; z-index: 2; }
+  .random-zone { min-width: 0; padding: 35px 38px 28px; align-items: flex-start; text-align: left; position: relative; }
+  .random-zone .eyebrow { font-size: 10px; letter-spacing: 2px; margin-bottom: 21px; }
+  .random-zone .prompt { font: 34px/1.4 var(--serif); margin-bottom: 10px; }
+  .feature-copy { color: var(--body-muted); font-size: 12px; line-height: 1.9; margin-bottom: 22px; }
+  .random-btn { font-size: 13px; font-weight: 500; padding: 13px 25px; border-radius: 2px; letter-spacing: 2px; }
+  .random-btn::after { content: "↗"; margin-left: 16px; font-size: 17px; }
+  .result-area { max-width: none; align-items: flex-start; gap: 8px; margin-top: 22px; border-top: 1px solid var(--hairline); padding-top: 12px; }
+  .slot-text { height: 48px; background: transparent; border-radius: 0; align-items: stretch; position: relative; display: block; }
+  .slot-track { width: 100%; }
+  .slot-item { height: 48px; line-height: 48px; font-family: var(--serif); max-width: 100%; opacity: .65; }
+  .slot-item.is-final { font-size: 22px; color: var(--ink); font-weight: 400; }
+  .roll-progress { height: 2px; }
+  .result-tags:empty, .result-actions:has(button[style*="none"]):not(:has(button[style*="inline"])) { display: none; }
+  .result-url { font-size: 12px; }
+  .result-actions { justify-content: flex-start; gap: 8px; }
+  .btn-pill { border-radius: 2px; font-size: 12px; padding: 9px 15px; font-weight: 500; }
+  .collection { padding-top: 39px; }
+  .collection-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; gap: 12px; }
+  .collection-heading h2 { flex-shrink: 0; white-space: nowrap; font: 27px var(--serif); font-weight: 500; }
+  .section-number { color: var(--primary); font: italic 16px Georgia, serif; margin-right: 12px; }
+  .collection-heading p { font: italic 14px Georgia, serif; color: var(--body-muted); }
+  .toolbar { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--hairline); padding: 13px 0; margin-bottom: 18px; }
+  .btn-utility { border-radius: 2px; font-size: 12px; padding: 9px 14px; }
+  .btn-utility:not(.active) { background: transparent; }
+  #addBtn { color: var(--primary); border: 1px solid var(--primary); }
+  .filter-row { gap: 7px; margin-bottom: 20px; }
+  .filter-row:empty { display: none; }
+  .filter-tag { background: transparent; border: 1px solid var(--hairline); padding: 5px 12px; font-size: 11px; }
+  .filter-tag.active { background: var(--ink); border-color: var(--ink); }
+  .list-header { margin-bottom: 0; padding-bottom: 12px; }
+  .list-header h2 { font-size: 10px; letter-spacing: 2px; font-weight: 400; color: var(--body-muted); }
+  .list-count { font-size: 11px; }
+  .video-list { gap: 0; counter-reset: film; }
+  .video-item { padding: 20px 8px; border-radius: 0; background: transparent; border-top: 1px solid var(--hairline); gap: 20px; }
+  .video-item::before { counter-increment: film; content: counter(film, decimal-leading-zero); font: italic 21px Georgia, serif; color: #939588; width: 34px; flex-shrink: 0; }
+  .video-item .info { flex: 1; }
+  .video-item .title { font-family: var(--serif); font-size: 19px; font-weight: 500; }
+  .video-item .meta { margin-top: 8px; }
+  .tag-chip { padding: 2px 7px; background: var(--surface-pearl); border-radius: 2px; font-size: 10px; }
+  .video-item .actions button { background: transparent; border: 1px solid var(--hairline); }
+  .empty-state { padding: 32px 16px 40px; border-top: 1px solid var(--hairline); }
+  .empty-state .icon { font: italic 35px Georgia, serif; color: var(--primary); margin-bottom: 12px; }
+  .empty-state p { font-family: var(--serif); font-size: 17px; }
+  .empty-state small { display: block; margin-top: 10px; font-size: 11px; letter-spacing: 1px; }
+  .form-row input, .edit-form input, .modal-box textarea { border-radius: 2px; }
+  .add-form { padding: 20px; background: var(--surface-pearl); }
+  .modal-box { border-radius: 3px; box-shadow: 0 18px 80px #292c2620; }
+  .modal-box h3 { font-family: var(--serif); }
+  .footer { border-top: 1px solid var(--ink); padding: 21px 0 30px; display: flex; justify-content: space-between; gap: 16px; color: var(--body-muted); font-size: 10px; letter-spacing: 1px; }
+  .footer em { font-family: Georgia, serif; font-size: 13px; letter-spacing: 0; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+  @media (max-width: 760px) {
+    body { padding: 0 22px; }
+    .masthead { padding: 20px 0; letter-spacing: 1px; }
+    .header { padding: 32px 0 25px; }
+    .header-note { display: none; }
+    .feature { grid-template-columns: 1fr; }
+    .poster { min-height: 260px; border-right: 0; border-bottom: 1px solid var(--hairline); }
+    .poster-sun { width: 120px; height: 120px; top: 42px; }
+    .poster-arch { top: 70px; height: 240px; }
+    .poster-disc { top: 110px; width: 120px; height: 120px; }
+    .poster-strip { top: 180px; height: 55px; }
+    .poster-word { font-size: 52px; bottom: 38px; }
+    .poster-caption { bottom: 15px; }
+    .random-zone { padding: 27px 24px; }
+    .random-zone .prompt { font-size: 29px; }
+    .collection { padding-top: 30px; }
+    .toolbar { align-items: flex-start; gap: 14px; }
+    .toolbar-group { gap: 5px; }
+    .btn-utility { padding: 8px 11px; }
+    .form-row { grid-template-columns: 1fr; }
+    .collection-heading p { font-size: 12px; }
+    .video-item { gap: 10px; padding: 18px 0; }
+    .video-item::before { width: 24px; font-size: 17px; }
+    .video-item .title { font-size: 17px; }
+    .video-item .actions { gap: 5px; }
+    .video-item .actions button { width: 29px; height: 29px; }
+    .footer { font-size: 9px; flex-wrap: wrap; }
+  }
+  @media (max-width: 420px) {
+    .masthead > span { display: none; }
+    .random-zone .eyebrow { font-size: 9px; letter-spacing: 1px; line-height: 1.6; }
+    .poster-word { font-size: 44px; }
+    .collection-heading h2 { font-size: 23px; }
+    .collection-heading p { font-size: 11px; text-align: right; }
+  }
+  .sync-status { font-size: 11px; line-height: 1.8; color: var(--body-muted); margin: -8px 0 16px; }
+  .access-box input { font-size: 16px; width: 100%; height: 44px; padding: 10px; border: 1px solid var(--hairline); background: var(--canvas); }
+  [hidden] { display: none !important; }
+  .add-form { padding: 24px; gap: 18px; border: 1px solid var(--hairline); }
+  .add-heading, .add-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .eyebrow-small { color: var(--primary); font-size: 9px; letter-spacing: 2px; }
+  .add-heading h3 { margin-top: 7px; font: 24px var(--serif); font-weight: 400; }
+  .add-mode { display: flex; gap: 6px; border-bottom: 1px solid var(--hairline); padding-bottom: 14px; }
+  .field-label { display: block; min-width: 0; font-size: 12px; font-weight: 500; }
+  .field-label span { font-size: 11px; font-weight: 400; color: var(--body-muted); margin-left: 5px; }
+  .field-label input { display: block; margin-top: 8px; background: var(--canvas-white); }
+  .add-hint { font-size: 11px; color: var(--body-muted); line-height: 1.8; }
+  p.add-hint { margin-top: 9px; }
+  .add-tag-row { align-items: end; }
+  .keep-tags { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 12px; cursor: pointer; }
+  .keep-tags input { width: 15px; height: 15px; accent-color: var(--primary); margin: 0; padding: 0; }
+  .tag-suggestions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  .tag-suggestions:empty, .add-feedback:empty, .batch-summary:empty, .batch-preview:empty { display: none; }
+  .suggestion-label { font-size: 10px; color: var(--body-muted); margin-right: 3px; }
+  .tag-suggestions button { background: var(--canvas-white); }
+  .add-footer { border-top: 1px solid var(--hairline); padding-top: 15px; }
+  .add-footer .btn-pill { min-height: 42px; flex-shrink: 0; }
+  .add-feedback { font-size: 12px; color: #355941; line-height: 1.8; }
+  .add-feedback.is-error { color: #983322; }
+  #batchInput { width: 100%; margin-top: 8px; border: 1px solid var(--hairline); border-radius: 2px; padding: 12px; background: var(--canvas-white); color: var(--ink); font: 13px/1.8 var(--font); resize: vertical; }
+  #batchInput:focus { outline: 1px solid var(--primary); }
+  .batch-summary { margin-top: 12px; font-size: 12px; color: var(--primary); }
+  .batch-preview { list-style: none; max-height: 210px; overflow: auto; margin-top: 10px; }
+  .batch-preview li { display: flex; justify-content: space-between; gap: 15px; border-top: 1px solid var(--hairline); padding: 9px 0; font-size: 12px; }
+  .batch-preview li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .batch-preview li small { flex-shrink: 0; color: var(--body-muted); }
+  .batch-preview .invalid small { color: #983322; }
+  @media (max-width: 760px) {
+    .add-form { padding: 18px; }
+    .form-row input, .edit-form input, .modal-box textarea, #batchInput { font-size: 16px; }
+    .video-item { flex-wrap: wrap; }
+    .video-item .info { flex-basis: calc(100% - 40px); }
+    .video-item .actions { margin-left: 34px; }
+    .video-item .actions button { width: 44px; height: 44px; }
+    .tag-chip { display: block; }
+    .add-heading { flex-wrap: wrap; }
+    .modal-box { padding: 24px; }
+    .add-footer { align-items: stretch; flex-direction: column; gap: 10px; }
+    .add-tag-row { gap: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<main class="container">
+  <div class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">◉</span> WATCH POOL / 私人放映室</div><span>A PERSONAL FILM JOURNAL</span></div>
+
+  <!-- ===== Header ===== -->
+  <div class="header">
+    <div><h1>看啥<span>好呢。</span></h1><p>收藏那些想看的世界，把今晚交给一点偶然。</p></div>
+    <div class="header-note">A little chance,<br>a whole new world.</div>
+  </div>
+
+  <!-- ===== Random Zone ===== -->
+  <section class="feature" aria-label="今晚的放映">
+  <div class="poster" role="img" aria-label="艺术拼贴海报：朱红色太阳、墨绿色拱门与金色光带">
+    <div class="poster-top"><span>THE ART OF WATCHING</span><span>NO. 01</span></div>
+    <div class="poster-sun"></div><div class="poster-arch"></div><div class="poster-disc"></div><div class="poster-strip"></div>
+    <div class="poster-word">Lost in<br>the frame.</div><div class="poster-caption">在 别 人 的 故 事 里 · 偶 遇 自 己</div>
+  </div>
+  <div class="card random-zone">
+    <div class="eyebrow">TONIGHT’S SCREENING / 今夜放映</div>
+    <div class="prompt">让好故事，<br>不期而遇。</div><p class="feature-copy">从未看的收藏里，抽取一段未知的时光。</p>
+    <button class="random-btn" id="randomBtn">为我选一部</button>
+
+    <div class="result-area" id="resultArea">
+      <div class="slot-text" id="slotText" role="status" aria-live="polite">
+        <div class="slot-track" id="slotTrack"></div>
+      </div>
+      <div class="roll-progress" id="rollProgress" aria-hidden="true">
+        <span class="progress-fill"></span>
+      </div>
+      <div class="result-tags" id="resultTags"></div>
+      <a class="result-url" id="resultUrl" href="#" target="_blank" rel="noopener">打开链接 →</a>
+      <div class="result-actions">
+        <button class="btn-pill btn-primary" id="playBtn">播放</button>
+        <button class="btn-pill btn-secondary" id="watchedBtn">标记已看</button>
+      </div>
+    </div>
+  </div>
+
+  </section>
+  <!-- ===== Toolbar & List ===== -->
+  <section class="card collection">
+    <div class="collection-heading"><h2><span class="section-number">01 /</span> 我的片单</h2><p>Stories worth keeping.</p></div>
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button class="btn-utility active" id="filterAll">全部</button>
+        <button class="btn-utility" id="filterUnwatched">未看</button>
+        <button class="btn-utility" id="filterWatched">已看</button>
+      </div>
+      <div class="toolbar-group">
+        <button class="btn-utility" id="addBtn" aria-expanded="false" aria-controls="addForm">＋ 添加视频</button>
+        <button class="btn-utility" id="exportBtn">导出</button>
+        <button class="btn-utility" id="importBtn">导入</button>
+      </div>
+    </div>
+
+    <p class="sync-status" id="syncStatus" role="status">正在连接云端片单…</p>
+
+    <!-- Add form -->
+    <div class="add-form" id="addForm" style="display:none;" aria-label="添加到片单">
+      <div class="add-heading">
+        <div><span class="eyebrow-small">COLLECT A STORY</span><h3>留住一次心动。</h3></div>
+        <button class="btn-utility" id="closeAddBtn" type="button" aria-label="收起添加表单">收起 ↑</button>
+      </div>
+      <div class="add-mode" role="group" aria-label="添加方式">
+        <button class="btn-utility active" id="singleModeBtn" type="button" aria-pressed="true">单条添加</button>
+        <button class="btn-utility" id="batchModeBtn" type="button" aria-pressed="false">批量粘贴</button>
+      </div>
+      <div id="singleFields">
+        <div class="form-row">
+          <label class="field-label" for="inputTitle">作品标题
+            <input type="text" id="inputTitle" placeholder="输入标题，或直接粘贴分享文字 / 链接" maxlength="200" aria-describedby="addHint">
+          </label>
+          <label class="field-label" for="inputUrl">视频链接 <span>选填</span>
+            <input type="url" id="inputUrl" placeholder="https://…" maxlength="2000" inputmode="url">
+          </label>
+        </div>
+        <p class="add-hint" id="addHint">粘贴「标题 + 链接」会自动拆分；只有链接也能收藏，标题可再修改。</p>
+      </div>
+      <div id="batchFields" hidden>
+        <label class="field-label" for="batchInput">每行一部作品</label>
+        <textarea id="batchInput" rows="5" maxlength="50000" placeholder="花样年华&#10;一段想看的故事 https://example.com/watch/123&#10;https://example.com/watch/456" aria-describedby="batchHint"></textarea>
+        <p class="add-hint" id="batchHint">支持标题、链接或「标题 + 链接」；下方标签应用于这一批作品。每次最多 100 条。</p>
+        <div class="batch-summary" id="batchSummary" role="status" aria-live="polite"></div>
+        <ol class="batch-preview" id="batchPreview" aria-label="批量添加预览"></ol>
+      </div>
+      <div class="form-row add-tag-row">
+        <label class="field-label" for="inputTags">标签 <span>选填，逗号分隔</span>
+          <input type="text" id="inputTags" placeholder="如：电影, 科幻" maxlength="100">
+        </label>
+        <label class="keep-tags"><input type="checkbox" id="keepTags" checked>连续添加时保留标签</label>
+      </div>
+      <div class="tag-suggestions" id="tagSuggestions" role="group" aria-label="点选已有标签"></div>
+      <div class="add-footer">
+        <span class="add-hint">⌘ / Ctrl + Enter 保存 · Esc 收起，保留未保存内容</span>
+        <button class="btn-pill btn-primary" id="saveBtn" type="button">添加到片单 ↗</button>
+      </div>
+      <p class="add-feedback" id="addFeedback" role="status" aria-live="polite"></p>
+    </div>
+
+    <!-- Filter tags -->
+    <div class="filter-row" id="filterTags"></div>
+
+    <!-- List header -->
+    <div class="list-header">
+      <h2>THE COLLECTION / 影像收藏</h2>
+      <span class="list-count" id="listCount">0 个视频</span>
+    </div>
+
+    <!-- Video list -->
+    <div class="video-list" id="videoList"></div>
+  </section>
+  <footer class="footer"><span>你的片单，云端保存 · 多设备共享。</span><em>Life is short. Watch something wonderful.</em></footer>
+</main>
+
+<!-- ===== Import Modal ===== -->
+<div class="modal-backdrop" id="importModal">
+  <div class="modal-box">
+    <h3>导入数据</h3>
+    <p class="modal-description">
+      粘贴之前导出的 JSON 数据，将合并到现有清单中（重复 ID 会跳过）。
+    </p>
+    <textarea id="importText" placeholder='[{"id":"...","title":"...",...}]'></textarea>
+    <div class="modal-actions">
+      <button class="btn-utility" id="importCancel">取消</button>
+      <button class="btn-pill btn-primary" id="importConfirm">导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Edit Modal ===== -->
+<div class="modal-backdrop" id="editModal" aria-hidden="true">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <h3 id="editModalTitle">编辑视频</h3>
+    <div class="edit-form">
+      <input type="text" id="editTitle" aria-label="视频标题 *" placeholder="视频标题 *" maxlength="200">
+      <input type="url" id="editUrl" aria-label="视频链接（选填）" placeholder="视频链接（选填）" maxlength="500">
+      <input type="text" id="editTags" aria-label="标签（逗号分隔，如：电影, 科幻）" placeholder="标签（逗号分隔，如：电影, 科幻）" maxlength="100">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-utility" id="editCancel" type="button">取消</button>
+      <button class="btn-pill btn-primary" id="editSave" type="button">保存修改</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop open" id="accessModal" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
+  <form class="modal-box access-box" id="accessForm">
+    <h3 id="accessTitle">你的私人放映室。</h3>
+    <p class="modal-description">在每台设备打开同一个私人链接，即可共享片单。也可以输入访问密钥。</p>
+    <label for="accessInput" class="field-label">访问密钥</label>
+    <input id="accessInput" type="password" autocomplete="off" required>
+    <p class="add-hint" id="accessMessage" role="status"></p>
+    <div class="modal-actions"><button class="btn-pill btn-primary" id="accessSubmit" type="submit">打开片单</button></div>
+  </form>
+</div>
+<script>
+// ============================================================
+//  看啥好呢 — 随机视频推荐器
+// ============================================================
+
+// ---------- State ----------
+let videos = [];
+let currentFilter = 'all';       // 'all' | 'unwatched' | 'watched'
+let activeTagFilter = null;      // null or tag string
+let isRolling = false;
+let editingId = null;            // id of video currently being edited
+
+const STORAGE_KEY = 'random-video-pool';
+
+// ---------- DOM refs ----------
+const $ = id => document.getElementById(id);
+const randomBtn = $('randomBtn');
+const resultCard = $('resultArea');
+const slotText = $('slotText');
+const slotTrack = $('slotTrack');
+const resultTags = $('resultTags');
+const resultUrl = $('resultUrl');
+const playBtn = $('playBtn');
+const watchedBtn = $('watchedBtn');
+const addBtn = $('addBtn');
+const addForm = $('addForm');
+const inputTitle = $('inputTitle');
+const inputUrl = $('inputUrl');
+const inputTags = $('inputTags');
+const saveBtn = $('saveBtn');
+const filterTags = $('filterTags');
+const videoList = $('videoList');
+const listCount = $('listCount');
+const filterAll = $('filterAll');
+const filterUnwatched = $('filterUnwatched');
+const filterWatched = $('filterWatched');
+const exportBtn = $('exportBtn');
+const importBtn = $('importBtn');
+const importModal = $('importModal');
+const importText = $('importText');
+const importCancel = $('importCancel');
+const importConfirm = $('importConfirm');
+const editModal = $('editModal');
+const editTitle = $('editTitle');
+const editUrl = $('editUrl');
+const editTags = $('editTags');
+const editSave = $('editSave');
+const editCancel = $('editCancel');
+const rollProgress = $('rollProgress');
+const progressFill = document.querySelector('#rollProgress .progress-fill');
+
+// ---------- Helpers ----------
+function uid() {
+  return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function parseTags(str) {
+  return [...new Set(str.split(/[,，]/).map(s => s.trim()).filter(Boolean))].map(t => t.slice(0, 100)).slice(0, 50);
+}
+
+// ---------- Cloud storage + recoverable device cache ----------
+const CACHE_KEY = 'watch-pool-cloud-cache-v1';
+const KEY_STORAGE = 'watch-pool-access-key';
+let connecting = false;
+let accessKey = '';
+let cloudReady = false;
+let baseline = [];
+let pendingPatches = [];
+let pumping = false;
+let pulling = false;
+let generation = 0;
+function clone(value) { return JSON.parse(JSON.stringify(value)); }
+function syncStatus(message) { $('syncStatus').textContent = message; }
+function load() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+    videos = Array.isArray(cached.videos) ? cached.videos : [];
+    baseline = Array.isArray(cached.baseline) ? cached.baseline : clone(videos);
+    pendingPatches = Array.isArray(cached.pending) ? cached.pending : [];
+  } catch { videos = []; baseline = []; pendingPatches = []; }
+}
+function persistCache() {
+  localStorage.setItem(CACHE_KEY, JSON.stringify({ videos, baseline, pending: pendingPatches }));
+}
+function applyPatches(list, patches) {
+  let merged = clone(list);
+  for (const patch of patches) {
+    merged = merged.filter(item => !patch.deletes.includes(item.id));
+    // Reverse newly inserted entries so the user's batch order stays intact.
+    for (const item of [...patch.upserts].reverse()) {
+      const index = merged.findIndex(video => video.id === item.id);
+      if (index >= 0) merged[index] = clone(item);
+      else merged.unshift(clone(item));
+    }
+  }
+  return merged;
+}
+async function cloudRequest(method = 'GET', patch) {
+  const response = await fetch('/api/videos', {
+    method, cache: 'no-store',
+    headers: { Authorization: `Bearer ${accessKey}`, ...(patch ? { 'Content-Type': 'application/json' } : {}) },
+    body: patch ? JSON.stringify(patch) : undefined,
+    signal: AbortSignal.timeout(12000)
+  });
+  if (response.status === 401) throw new Error('访问密钥无效，请重新打开私人链接');
+  if (!response.ok) throw new Error(`云端保存失败（${response.status}）`);
+  const data = await response.json();
+  if (!Array.isArray(data.videos)) throw new Error('云端返回格式无效');
+  return data.videos;
+}
+function refreshCloudView(list) {
+  videos = applyPatches(list, pendingPatches);
+  baseline = clone(videos);
+  persistCache();
+  render();
+  if (!isRolling) {
+    const id = resultCard.dataset.videoId;
+    if (id) showResult(videos.find(video => video.id === id) || null);
+    else showResult(null);
+  }
+}
+function save() {
+  if (videos.length > 5000 || new TextEncoder().encode(JSON.stringify(videos)).length > 900000) {
+    syncStatus('片单内容过多，请先导出备份并减少条目。');
+    return false;
+  }
+  const before = new Map(baseline.map(item => [item.id, item]));
+  const after = new Map(videos.map(item => [item.id, item]));
+  const patch = {
+    upserts: videos.filter(item => JSON.stringify(before.get(item.id)) !== JSON.stringify(item)),
+    deletes: baseline.filter(item => !after.has(item.id)).map(item => item.id)
+  };
+  if (!patch.upserts.length && !patch.deletes.length) return true;
+  pendingPatches.push(clone(patch));
+  const previous = baseline;
+  baseline = clone(videos);
+  try { persistCache(); }
+  catch {
+    baseline = previous;
+    pendingPatches.pop();
+    syncStatus('本机备份失败，请先导出片单并重试。');
+    return false;
+  }
+  generation++;
+  syncStatus('正在保存到云端…');
+  void flushCloud();
+  return true;
+}
+async function flushCloud() {
+  if (!cloudReady || pumping || !pendingPatches.length) return;
+  pumping = true;
+  try {
+    while (pendingPatches.length) {
+      const list = await cloudRequest('PATCH', pendingPatches[0]);
+      pendingPatches.shift();
+      refreshCloudView(list);
+    }
+    syncStatus('已同步 · 所有设备共享同一份片单');
+  } catch (error) {
+    syncStatus(`${error.message}。改动已保存在本机，联网后自动重试。`);
+  } finally { pumping = false; }
+}
+async function pullCloud() {
+  if (!cloudReady || pumping || pulling || isRolling) return;
+  if (pendingPatches.length) { void flushCloud(); return; }
+  pulling = true;
+  const version = generation;
+  try {
+    const list = await cloudRequest();
+    if (version === generation && !pendingPatches.length) refreshCloudView(list);
+    syncStatus('已同步 · 所有设备共享同一份片单');
+  } catch { syncStatus('暂时离线 · 正在显示本机缓存，联网后自动同步'); }
+  finally { pulling = false; }
+}
+async function connectCloud(key) {
+  if (!key || connecting) return;
+  connecting = true;
+  $('accessSubmit').disabled = true;
+  $('accessMessage').textContent = '正在打开片单…';
+  accessKey = key.trim();
+  try {
+    const list = await cloudRequest();
+    localStorage.setItem(KEY_STORAGE, accessKey);
+    cloudReady = true;
+    refreshCloudView(list);
+    $('accessModal').classList.remove('open');
+    syncStatus('已同步 · 所有设备共享同一份片单');
+    void flushCloud();
+  } catch (error) {
+    $('accessMessage').textContent = error.message + '，请检查链接或网络后重试。';
+    syncStatus('尚未连接云端片单');
+  } finally { connecting = false; $('accessSubmit').disabled = false; }
+}
+
+// ---------- Get all unique tags ----------
+function allTags() {
+  const set = new Set();
+  videos.forEach(v => v.tags && v.tags.forEach(t => set.add(t)));
+  return [...set].sort();
+}
+
+// ---------- Filtered list ----------
+function filteredVideos() {
+  let list = [...videos];
+  if (currentFilter === 'unwatched') list = list.filter(v => !v.watched);
+  if (currentFilter === 'watched') list = list.filter(v => v.watched);
+  if (activeTagFilter) list = list.filter(v => v.tags && v.tags.includes(activeTagFilter));
+  return list;
+}
+
+// ---------- Render ----------
+function render() {
+  renderTagSuggestions();
+  if (addMode === 'batch') renderBatchPreview();
+  const list = filteredVideos();
+  listCount.textContent = `${list.length} / ${videos.length} 个视频`;
+
+  // Filter tag pills
+  const tags = allTags();
+  filterTags.innerHTML = tags.length
+    ? `<button class="filter-tag${!activeTagFilter ? ' active' : ''}" data-tag="">全部标签</button>` +
+      tags.map(t => `<button class="filter-tag${activeTagFilter === t ? ' active' : ''}" data-tag="${esc(t).replaceAll('"', '&quot;')}">${esc(t)}</button>`).join('')
+    : '';
+
+  // Video items
+  if (!list.length) {
+    videoList.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">${videos.length ? '⌕' : '✳'}</div>
+        <p>${videos.length ? '没有匹配的视频' : '每一份好片单，都从一次心动开始。'}</p><small>${videos.length ? '换个标签，看看别的故事。' : '点击「＋ 添加视频」，收藏你的第一部作品。'}</small>
+      </div>`;
+    return;
+  }
+
+  videoList.innerHTML = list.map(v => `
+    <div class="video-item" data-id="${v.id}">
+      <div class="info">
+        <div class="title${v.watched ? ' watched' : ''}">${esc(v.title)}</div>
+        <div class="meta">${v.tags && v.tags.length ? v.tags.map(t => `<span class="tag-chip">${esc(t)}</span>`).join('') : ''}</div>
+      </div>
+      <div class="actions">
+        <button class="btn-watched-sm${v.watched ? ' done' : ''}" data-action="toggle" title="${v.watched ? '标记未看' : '标记已看'}">${v.watched ? '✓' : '○'}</button>
+        <button class="btn-edit-sm" data-action="edit" title="编辑" aria-label="编辑">✎</button>
+        <button class="btn-del" data-action="delete" title="删除">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ---------- Random pick ----------
+function pickRandom() {
+  const pool = filteredVideos().filter(v => !v.watched);
+  if (!pool.length) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Render a single static line (centered) into the slot viewport
+function setSlotStatic(text) {
+  slotTrack.style.transition = 'none';
+  slotTrack.style.transform = 'translateY(0)';
+  slotTrack.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'slot-item is-final';
+  el.textContent = text;
+  slotTrack.appendChild(el);
+  slotText.classList.remove('rolling');
+}
+
+function showResult(video) {
+  resultCard.style.display = 'flex';
+  if (!video) {
+    delete resultCard.dataset.videoId;
+    setSlotStatic(!videos.length ? '下一场精彩，等你收藏' : filteredVideos().some(video => !video.watched) ? '为今晚选一部好故事' : '暂时没有未看的作品');
+    resultTags.innerHTML = '';
+    resultUrl.href = '#';
+    resultUrl.style.display = 'none';
+    playBtn.style.display = 'none';
+    watchedBtn.style.display = 'none';
+    return;
+  }
+
+  setSlotStatic(video.title);
+  resultTags.innerHTML = (video.tags || []).map(t => `<span class="tag-chip">${esc(t)}</span>`).join('');
+  resultUrl.href = video.url || '#';
+  resultUrl.style.display = video.url ? 'inline' : 'none';
+  resultUrl.textContent = video.url ? '打开链接 →' : '';
+  playBtn.style.display = 'inline-block';
+  watchedBtn.style.display = 'inline-block';
+  watchedBtn.textContent = video.watched ? '已看' : '标记已看';
+  watchedBtn.className = video.watched ? 'btn-pill btn-secondary' : 'btn-pill btn-secondary';
+
+  // Store current result id
+  resultCard.dataset.videoId = video.id;
+}
+
+// ---------- Slot-machine animation ----------
+function updateRollProgress(p) {
+  if (p > 0) {
+    rollProgress.classList.add('is-visible');
+  } else {
+    rollProgress.classList.remove('is-visible');
+  }
+  progressFill.style.width = `${p * 100}%`;
+}
+
+// Animation titles are unique per adjacent row, including the landing row.
+function buildRollItems(pool, finalVideo) {
+  const titles = [...new Map(pool.map(video => [video.title, video])).values()];
+  if (titles.length < 2) return [finalVideo];
+  const items = [];
+  for (let i = 0; i < 20; i++) {
+    const choices = titles.filter(video => video.title !== items.at(-1)?.title &&
+      (i !== 19 || video.title !== finalVideo.title));
+    // With two titles, the penultimate row may need one extra alternating step.
+    if (!choices.length) break;
+    items.push(choices[Math.floor(Math.random() * choices.length)]);
+  }
+  if (items.at(-1)?.title === finalVideo.title) items.pop();
+  items.push(finalVideo);
+  return items;
+}
+
+function startRolling() {
+  if (isRolling) return;
+  const pool = filteredVideos().filter(video => !video.watched);
+  if (!pool.length) {
+    showResult(null);
+    return;
+  }
+  const finalVideo = pool[Math.floor(Math.random() * pool.length)];
+  const items = buildRollItems(pool, finalVideo);
+  if (items.length === 1 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    showResult(finalVideo);
+    randomBtn.textContent = '再来一次';
+    return;
+  }
+
+  isRolling = true;
+  randomBtn.disabled = true;
+  randomBtn.textContent = '转动中…';
+  resultCard.style.display = 'flex';
+  delete resultCard.dataset.videoId;
+  resultTags.innerHTML = '';
+  resultUrl.style.display = 'none';
+  playBtn.style.display = 'none';
+  watchedBtn.style.display = 'none';
+  slotText.setAttribute('aria-live', 'off');
+  slotTrack.style.transition = 'none';
+  slotTrack.style.transform = 'translateY(0)';
+  slotTrack.replaceChildren(...items.map(video => {
+    const row = document.createElement('div');
+    row.className = 'slot-item';
+    row.textContent = video.title;
+    return row;
+  }));
+
+  const itemHeight = slotTrack.firstElementChild.offsetHeight;
+  const targetY = -(items.length - 1) * itemHeight;
+  const duration = 2500;
+  let completed = false;
+  let frame;
+  let fallback;
+  const finish = () => {
+    if (completed) return;
+    completed = true;
+    cancelAnimationFrame(frame);
+    clearTimeout(fallback);
+    slotTrack.removeEventListener('transitionend', onEnd);
+    slotText.setAttribute('aria-live', 'polite');
+    showResult(videos.find(video => video.id === finalVideo.id) || null);
+    updateRollProgress(0);
+    isRolling = false;
+    randomBtn.textContent = '再来一次';
+    randomBtn.disabled = false;
+  };
+  const onEnd = event => {
+    if (event.target === slotTrack && event.propertyName === 'transform') finish();
+  };
+  slotTrack.addEventListener('transitionend', onEnd);
+  void slotTrack.offsetHeight;
+  slotTrack.style.transition = `transform ${duration}ms cubic-bezier(0.16, 0.8, 0.32, 1)`;
+  slotTrack.style.transform = `translateY(${targetY}px)`;
+  const started = performance.now();
+  const tick = now => {
+    if (completed) return;
+    updateRollProgress(Math.min(1, (now - started) / duration));
+    frame = requestAnimationFrame(tick);
+  };
+  frame = requestAnimationFrame(tick);
+  // Restore controls even if a resize, motion preference or tab switch cancels transitionend.
+  fallback = setTimeout(finish, duration + 300);
+}
+
+// ---------- Add / Edit ----------
+function openEditModal(id) {
+  const v = videos.find(v => v.id === id);
+  if (!v) return;
+  editingId = id;
+  editTitle.value = v.title;
+  editUrl.value = v.url || '';
+  editTags.value = (v.tags || []).join(', ');
+  editModal.classList.add('open');
+  editTitle.focus();
+}
+
+function saveEdit() {
+  const title = editTitle.value;
+  if (!title.trim()) {
+    editTitle.focus();
+    editTitle.style.borderColor = '#e74c3c';
+    setTimeout(() => editTitle.style.borderColor = '', 1200);
+    return;
+  }
+
+  const v = videos.find(v => v.id === editingId);
+  if (!v) return;
+  const previous = clone(videos);
+  const url = normalizedUrl(editUrl.value);
+  if (url === null) { editUrl.focus(); alert('请填写有效的 http / https 链接。'); return; }
+  v.title = title.trim();
+  v.url = url;
+  v.tags = parseTags(editTags.value);
+
+  if (!save()) { videos = previous; return; }
+  render();
+  editModal.classList.remove('open');
+  editingId = null;
+}
+
+function deleteVideo(id) {
+  const previous = clone(videos);
+  videos = videos.filter(v => v.id !== id);
+  if (!save()) { videos = previous; return; }
+  render();
+  // If the deleted video was shown, clear result
+  if (resultCard.dataset.videoId === id) {
+    resultCard.style.display = 'none';
+  }
+}
+
+function toggleWatched(id) {
+  const v = videos.find(v => v.id === id);
+  if (!v) return;
+  const previous = clone(videos);
+  v.watched = !v.watched;
+  if (!save()) { videos = previous; return; }
+  render();
+  // Update result card if showing this video
+  if (resultCard.dataset.videoId === id) {
+    showResult(v);
+  }
+}
+
+// ---------- Import / Export ----------
+function exportData() {
+  const blob = new Blob([JSON.stringify(videos, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `watch-pool-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(jsonStr) {
+  let data;
+  try {
+    data = JSON.parse(jsonStr);
+  } catch {
+    alert('JSON 格式无效，请检查后重试。');
+    return false;
+  }
+  if (!Array.isArray(data)) {
+    alert('数据必须是数组格式。');
+    return false;
+  }
+
+  const previous = clone(videos);
+  const existingIds = new Set(videos.map(v => v.id));
+  let added = 0;
+  data.forEach(item => {
+    if (!item || typeof item !== 'object') return;
+    if (typeof item.id !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(item.id) || typeof item.title !== 'string' || !item.title.trim() || item.title.length > 200) return;
+    if (existingIds.has(item.id)) return;
+    videos.push({
+      id: item.id,
+      title: item.title,
+      url: typeof item.url === 'string' && item.url.length <= 2000 ? (normalizedUrl(item.url) || '') : '',
+      tags: Array.isArray(item.tags) ? item.tags.filter(t => typeof t === 'string' && t.length <= 100).slice(0, 50) : [],
+      watched: !!item.watched,
+    });
+    existingIds.add(item.id);
+    added++;
+  });
+  if (!save()) { videos = previous; alert('片单内容过多或本机备份失败，请检查同步状态后重试。'); return false; }
+  render();
+  alert(`导入完成！新增 ${added} 个视频。`);
+  return true;
+}
+
+// ============================================================
+//  Event Bindings
+// ============================================================
+
+// --- Random ---
+randomBtn.addEventListener('click', () => {
+  if (isRolling) return;
+  startRolling();
+});
+
+// --- Play ---
+playBtn.addEventListener('click', () => {
+  const id = resultCard.dataset.videoId;
+  const v = videos.find(v => v.id === id);
+  if (v && v.url) {
+    window.open(v.url, '_blank');
+  } else if (v) {
+    alert('该视频没有保存链接。');
+  }
+});
+
+// --- Mark watched from result card ---
+watchedBtn.addEventListener('click', () => {
+  const id = resultCard.dataset.videoId;
+  if (id) toggleWatched(id);
+});
+
+// --- Quick collection ---
+let addMode = 'single';
+const batchInput = $('batchInput');
+const addFeedback = $('addFeedback');
+
+function normalizedUrl(value) {
+  if (!value.trim()) return '';
+  try {
+    const url = new URL(value.trim());
+    return ['https:', 'http:'].includes(url.protocol) ? url.href : null;
+  } catch { return null; }
+}
+
+function parseCollectionLine(value) {
+  const text = value.trim();
+  if (!text) return { title: '', url: '', error: '请输入标题或链接' };
+  const links = text.match(/https?:\/\/[^\s<>"“”]+/gi) || [];
+  if (links.length > 1) return { title: text, url: '', error: '请每行只放一个链接' };
+  if (!links.length) {
+    if (/^(?:[a-z][a-z\d+.-]*:\/\/|(?:javascript|data|file|mailto|vbscript):|https?:|www\.)/i.test(text)) {
+      return { title: text, url: '', error: '请使用完整的 http / https 链接' };
+    }
+    return { title: text, url: '', error: text.length > 200 ? '标题超过 200 字' : '' };
+  }
+  const raw = links[0].replace(/[，。；！？、,;!]+$/, '').replace(/[）】》」』]+$/, '');
+  const url = normalizedUrl(raw);
+  if (!url) return { title: text, url: '', error: '链接格式无效' };
+  let title = text.replace(links[0], '').trim().replace(/^[\s|｜—–:：-]+|[\s|｜—–:：-]+$/g, '');
+  if (!title) {
+    const parsed = new URL(url);
+    title = parsed.hostname + (parsed.pathname === '/' ? '' : parsed.pathname);
+    if (title.length > 200) title = title.slice(0, 197) + '…';
+  }
+  return { title, url, error: title.length > 200 ? '标题超过 200 字' : url.length > 2000 ? '链接超过 2000 字' : '' };
+}
+
+function collectionKey(item) {
+  return item.url ? 'url:' + (normalizedUrl(item.url) || item.url.trim()) : 'title:' + item.title.trim().toLocaleLowerCase();
+}
+
+function planBatch(text, existing) {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const keys = new Set(existing.map(collectionKey));
+  return lines.map((line, i) => {
+    const item = parseCollectionLine(line);
+    let reason = i >= 100 ? '超过 100 条，本次不添加' : item.error;
+    let status = reason ? 'invalid' : 'ready';
+    const key = collectionKey(item);
+    if (!reason && keys.has(key)) { status = 'duplicate'; reason = '重复，跳过'; }
+    if (status === 'ready') keys.add(key);
+    return { ...item, line, status, reason };
+  });
+}
+
+function feedback(message = '', error = false) {
+  addFeedback.textContent = message;
+  addFeedback.classList.toggle('is-error', error);
+}
+
+function renderTagSuggestions() {
+  const host = $('tagSuggestions');
+  host.replaceChildren();
+  const tags = allTags();
+  if (!tags.length) return;
+  const label = document.createElement('span');
+  label.className = 'suggestion-label';
+  label.textContent = '已有标签';
+  host.append(label);
+  const selected = new Set(parseTags(inputTags.value));
+  tags.forEach(tag => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'filter-tag' + (selected.has(tag) ? ' active' : '');
+    button.textContent = tag;
+    button.setAttribute('aria-pressed', String(selected.has(tag)));
+    button.addEventListener('click', () => {
+      const next = new Set(parseTags(inputTags.value));
+      if (next.has(tag)) next.delete(tag); else next.add(tag);
+      const value = [...next].join(', ');
+      if (value.length > 100) { feedback('标签最多 100 字，请精简后再添加。', true); return; }
+      inputTags.value = value;
+      // Keep keyboard focus on the tag being toggled.
+      host.querySelectorAll('button').forEach(btn => {
+        const active = next.has(btn.textContent);
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      });
+    });
+    host.append(button);
+  });
+}
+
+function renderBatchPreview() {
+  const rows = planBatch(batchInput.value, videos);
+  const ready = rows.filter(row => row.status === 'ready').length;
+  const duplicate = rows.filter(row => row.status === 'duplicate').length;
+  const invalid = rows.filter(row => row.status === 'invalid').length;
+  $('batchSummary').textContent = rows.length ? `可添加 ${ready} 条 · 重复 ${duplicate} 条 · 待修正 ${invalid} 条` : '';
+  $('batchPreview').replaceChildren();
+  rows.slice(0, 100).forEach((row, index) => {
+    const li = document.createElement('li');
+    li.className = row.status;
+    const title = document.createElement('span');
+    title.textContent = `${index + 1}. ${row.title}`;
+    title.title = row.title;
+    const status = document.createElement('small');
+    status.textContent = row.reason || '待添加';
+    li.append(title, status);
+    $('batchPreview').append(li);
+  });
+  if (addMode === 'batch') saveBtn.textContent = ready ? `添加 ${ready} 部作品 ↗` : '添加到片单 ↗';
+}
+
+function setAddMode(mode) {
+  addMode = mode;
+  $('singleFields').hidden = mode !== 'single';
+  $('batchFields').hidden = mode !== 'batch';
+  for (const [id, value] of [['singleModeBtn', 'single'], ['batchModeBtn', 'batch']]) {
+    $(id).classList.toggle('active', mode === value);
+    $(id).setAttribute('aria-pressed', String(mode === value));
+  }
+  feedback();
+  saveBtn.textContent = '添加到片单 ↗';
+  if (mode === 'batch') renderBatchPreview();
+  (mode === 'single' ? inputTitle : batchInput).focus();
+}
+
+function toggleAddForm(open) {
+  addForm.style.display = open ? 'flex' : 'none';
+  addBtn.setAttribute('aria-expanded', String(open));
+  if (open) {
+    renderTagSuggestions();
+    (addMode === 'single' ? inputTitle : batchInput).focus();
+  } else addBtn.focus();
+}
+
+function saveCollection() {
+  let rows;
+  if (addMode === 'batch') {
+    rows = planBatch(batchInput.value, videos);
+    if (!rows.length) { feedback('先粘贴几部想看的作品吧。', true); batchInput.focus(); return; }
+  } else {
+    const parsed = parseCollectionLine(inputTitle.value);
+    const url = normalizedUrl(inputUrl.value || parsed.url);
+    const title = inputTitle.value.trim() ? parsed.title : (url ? parseCollectionLine(url).title : '');
+    if (!title || (inputTitle.value.trim() && parsed.error)) {
+      feedback(parsed.error || '请输入标题或链接。', true); inputTitle.focus(); return;
+    }
+    if (url === null || url.length > 2000) {
+      feedback('请填写有效的 http / https 链接，或留空。', true); inputUrl.focus(); return;
+    }
+    const item = { title, url };
+    if (videos.some(v => collectionKey(v) === collectionKey(item))) {
+      feedback('这部作品已经在片单里了，无需重复添加。', true); return;
+    }
+    rows = [{ ...item, status: 'ready' }];
+  }
+  const ready = rows.filter(row => row.status === 'ready');
+  const invalid = rows.filter(row => row.status === 'invalid');
+  const duplicates = rows.filter(row => row.status === 'duplicate');
+  if (!ready.length) { feedback('没有可添加的新作品，请检查预览中的提示。', true); return; }
+  const tags = parseTags(inputTags.value);
+  const additions = ready.map(row => ({ id: uid(), title: row.title, url: row.url, tags: [...tags], watched: false }));
+  // Persist first: if browser storage is unavailable, leave both the list and draft intact.
+  const next = [...additions, ...videos];
+  const previous = videos;
+  videos = next;
+  if (!save()) { videos = previous; feedback('本机备份失败，输入内容已保留，请重试。', true); return; }
+  if (addMode === 'single') { inputTitle.value = ''; inputUrl.value = ''; }
+  else batchInput.value = invalid.map(row => row.line).join('\n');
+  if (!$('keepTags').checked) inputTags.value = '';
+  // Make the newly collected items visible even when a previous filter hid them.
+  activeTagFilter = null;
+  setFilter('all');
+  feedback(`已添加 ${ready.length} 部作品。${duplicates.length ? `跳过 ${duplicates.length} 条重复。` : ''}${invalid.length ? `还有 ${invalid.length} 条待修正，已保留在输入框。` : '可以继续添加下一部。'}`);
+  (addMode === 'single' ? inputTitle : batchInput).focus();
+}
+
+addBtn.addEventListener('click', () => toggleAddForm(addForm.style.display === 'none'));
+$('closeAddBtn').addEventListener('click', () => toggleAddForm(false));
+$('singleModeBtn').addEventListener('click', () => setAddMode('single'));
+$('batchModeBtn').addEventListener('click', () => setAddMode('batch'));
+saveBtn.addEventListener('click', saveCollection);
+inputTags.addEventListener('input', renderTagSuggestions);
+batchInput.addEventListener('input', renderBatchPreview);
+
+// Parse pasted share text locally; no clipboard permission or external request is needed.
+inputTitle.addEventListener('paste', event => {
+  const text = event.clipboardData?.getData('text/plain') || '';
+  // Respect partial edits and any link the user has already entered.
+  if (inputUrl.value.trim() || (inputTitle.value && (inputTitle.selectionStart !== 0 || inputTitle.selectionEnd !== inputTitle.value.length))) return;
+  const lines = text.trim().split(/\r?\n/).filter(line => line.trim());
+  if (lines.length > 1) {
+    event.preventDefault();
+    if (batchInput.value.trim()) {
+      setAddMode('batch');
+      feedback('批量输入框里还有内容；请将新内容粘贴到需要的位置，避免覆盖。');
+      return;
+    }
+    batchInput.value = text.slice(0, 50000);
+    setAddMode('batch');
+    if (text.length > 50000) feedback('已填入前 50000 字，其余内容请分批粘贴。', true);
+  } else {
+    const parsed = parseCollectionLine(text);
+    if (!parsed.url || parsed.error) return;
+    event.preventDefault();
+    inputTitle.value = parsed.title;
+    inputUrl.value = parsed.url;
+    feedback('已识别标题和链接。可以修改后再保存。');
+  }
+});
+addForm.addEventListener('keydown', event => {
+  if (event.isComposing || event.keyCode === 229) return;
+  if (event.key === 'Escape') { event.preventDefault(); toggleAddForm(false); }
+  if (event.key === 'Enter' && ((event.metaKey || event.ctrlKey) || [inputTitle, inputUrl, inputTags].includes(event.target))) {
+    event.preventDefault(); saveCollection();
+  }
+});
+
+// --- Filter buttons ---
+function setFilter(type) {
+  currentFilter = type;
+  [filterAll, filterUnwatched, filterWatched].forEach(b => b.classList.remove('active'));
+  if (type === 'all') filterAll.classList.add('active');
+  if (type === 'unwatched') filterUnwatched.classList.add('active');
+  if (type === 'watched') filterWatched.classList.add('active');
+  render();
+}
+filterAll.addEventListener('click', () => setFilter('all'));
+filterUnwatched.addEventListener('click', () => setFilter('unwatched'));
+filterWatched.addEventListener('click', () => setFilter('watched'));
+
+// --- Filter tag clicks (delegated) ---
+filterTags.addEventListener('click', e => {
+  const btn = e.target.closest('.filter-tag');
+  if (!btn) return;
+  activeTagFilter = btn.dataset.tag || null;
+  render();
+});
+
+// --- Video list actions (delegated) ---
+videoList.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const item = btn.closest('.video-item');
+  if (!item) return;
+  const id = item.dataset.id;
+
+  if (btn.dataset.action === 'delete') {
+    if (confirm('确定要删除这个视频吗？')) deleteVideo(id);
+  }
+  if (btn.dataset.action === 'toggle') {
+    toggleWatched(id);
+  }
+  if (btn.dataset.action === 'edit') {
+    openEditModal(id);
+  }
+});
+
+// --- Export ---
+exportBtn.addEventListener('click', exportData);
+
+// --- Import ---
+importBtn.addEventListener('click', () => {
+  importText.value = '';
+  importModal.classList.add('open');
+});
+importCancel.addEventListener('click', () => importModal.classList.remove('open'));
+importConfirm.addEventListener('click', () => {
+  const val = importText.value.trim();
+  if (val) importData(val);
+  importModal.classList.remove('open');
+});
+// Close modal on backdrop click
+importModal.addEventListener('click', e => {
+  if (e.target === importModal) importModal.classList.remove('open');
+});
+
+// --- Edit ---
+editSave.addEventListener('click', saveEdit);
+editCancel.addEventListener('click', () => { editModal.classList.remove('open'); editingId = null; });
+// Close modal on backdrop click
+editModal.addEventListener('click', e => {
+  if (e.target === editModal) { editModal.classList.remove('open'); editingId = null; }
+});
+
+// ============================================================
+//  Init
+// ============================================================
+load();
+render();
+showResult(null);
+$('accessForm').addEventListener('submit', event => {
+  event.preventDefault();
+  void connectCloud($('accessInput').value);
+});
+let storedKey = '';
+try { storedKey = localStorage.getItem(KEY_STORAGE) || ''; } catch {}
+const fragmentKey = new URLSearchParams(location.hash.slice(1)).get('key');
+void connectCloud(fragmentKey || storedKey);
+function resumeSync() {
+  if (cloudReady) { void flushCloud(); void pullCloud(); }
+  else if (accessKey) void connectCloud(accessKey);
+}
+setInterval(() => { if (!document.hidden) resumeSync(); }, 15000);
+window.addEventListener('online', resumeSync);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeSync(); });
+</script>
+</body>
+</html>

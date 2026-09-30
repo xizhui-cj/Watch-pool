@@ -1,0 +1,29 @@
+{
+  "name": "watch-pool",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-30",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "ACCESS_KEY_HASH": "a4a2b16c386a88c762609b995c263151e5d80cbeae3448734ac548fe161cf67e"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WATCH_POOL",
+        "class_name": "WatchPool"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "WatchPool"
+      ]
+    }
+  ]
+}
