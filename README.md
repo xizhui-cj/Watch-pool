@@ -28,3 +28,9 @@ npm run dev
 ```
 
 `npm run deploy` 手动部署；`npx wrangler deploy --dry-run` 检查部署配置与打包。
+
+## 构建排查
+
+如果旧构建报 `Could not detect a directory containing static files`，先确认该构建对应的提交包含根目录 `wrangler.jsonc`、`src/worker.js` 和 `public/index.html`。这些部署文件从提交 `1c31a7e` 开始提供。首次创建仓库时仅有 README 的旧提交无法部署网站，请构建 `main` 的最新提交。
+
+生产分支应为 `main`，根目录为 `/`，部署命令为 `npx wrangler deploy`。重试旧构建可能仍使用旧提交；请在构建记录中确认提交 SHA。
