@@ -369,7 +369,7 @@
   }
   .modal-box textarea:focus { border-color: var(--primary); background: var(--canvas-white); }
   .edit-form { display: flex; flex-direction: column; gap: 12px; }
-  .edit-form input {
+  .edit-form input, .edit-form select {
     width: 100%;
     height: 44px;
     padding: 0 16px;
@@ -428,8 +428,10 @@
   .random-zone .prompt { font: 34px/1.4 var(--serif); margin-bottom: 10px; }
   .draw-scope { width: 100%; margin-bottom: 18px; }
   .draw-scope-label { display: block; font-size: 11px; color: var(--body-muted); margin-bottom: 8px; }
-  .draw-scope-options { display: flex; gap: 4px; border: 1px solid var(--hairline); padding: 4px; }
-  .draw-scope-options .btn-utility { flex: 1; min-width: 0; min-height: 44px; padding: 8px 10px; white-space: nowrap; }
+  .draw-scope-actions, .draw-tag-options { display: flex; flex-wrap: wrap; gap: 6px; }
+  .draw-scope-actions { margin-bottom: 8px; }
+  .draw-scope-options .btn-utility { min-width: 0; max-width: 100%; min-height: 44px; padding: 8px 12px; white-space: normal; overflow-wrap: anywhere; border: 1px solid var(--hairline); }
+  .draw-scope-hint { font-size: 11px; color: var(--body-muted); line-height: 1.6; margin-bottom: 8px; }
   .draw-scope-options button:disabled { cursor: default; opacity: .65; }
   .draw-pool-count { color: var(--body-muted); font-size: 11px; line-height: 1.6; margin-top: 8px; }
   .feature-copy { color: var(--body-muted); font-size: 12px; line-height: 1.9; margin-bottom: 22px; }
@@ -517,6 +519,8 @@
   }
   .sync-status { font-size: 11px; line-height: 1.8; color: var(--body-muted); margin: -8px 0 16px; }
   .access-box input { font-size: 16px; width: 100%; height: 44px; padding: 10px; border: 1px solid var(--hairline); background: var(--canvas); }
+  #tagRenameModal input, #tagRenameModal select { font-size: 16px; margin-top: 8px; }
+  #tagRenameFeedback { min-height: 1.8em; margin-top: 12px; }
   [hidden] { display: none !important; }
   .add-form { padding: 24px; gap: 18px; border: 1px solid var(--hairline); }
   .add-heading, .add-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
@@ -587,12 +591,9 @@
     <div class="eyebrow">TONIGHT’S SCREENING / 今夜放映</div>
     <div class="prompt">让好故事，<br>不期而遇。</div><p class="feature-copy">从未看的收藏里，抽取一段未知的时光。</p>
     <div class="draw-scope">
-      <span class="draw-scope-label" id="drawScopeLabel">抽取范围</span>
-      <div class="draw-scope-options" id="drawScopeOptions" role="group" aria-labelledby="drawScopeLabel">
-        <button type="button" class="btn-utility active" data-draw-scope="all" aria-pressed="true">全部</button>
-        <button type="button" class="btn-utility" data-draw-scope="movie" aria-pressed="false">电影</button>
-        <button type="button" class="btn-utility" data-draw-scope="creator" aria-pressed="false">UP 主</button>
-      </div>
+      <span class="draw-scope-label" id="drawScopeLabel">按标签抽取</span>
+      <p class="draw-scope-hint">可多选，包含任一所选标签即可抽取。</p>
+      <div class="draw-scope-options" id="drawScopeOptions" role="group" aria-labelledby="drawScopeLabel"></div>
       <p class="draw-pool-count" id="drawPoolCount" role="status"></p>
     </div>
     <button class="random-btn" id="randomBtn">为我选一部</button>
@@ -627,6 +628,7 @@
         <button class="btn-utility" id="addBtn" aria-expanded="false" aria-controls="addForm">＋ 添加视频</button>
         <button class="btn-utility" id="exportBtn">导出</button>
         <button class="btn-utility" id="importBtn">导入</button>
+        <button class="btn-utility" id="manageTagsBtn" type="button">管理标签</button>
       </div>
     </div>
 
@@ -720,6 +722,23 @@
   </div>
 </div>
 
+<!-- ===== Tag Management ===== -->
+<div class="modal-backdrop" id="tagRenameModal" aria-hidden="true">
+  <form class="modal-box" id="tagRenameForm" role="dialog" aria-modal="true" aria-labelledby="tagRenameTitle">
+    <h3 id="tagRenameTitle">管理标签</h3>
+    <p class="modal-description">改名会更新所有带此标签的收藏。若新名字已存在，两个标签会合并。</p>
+    <div class="edit-form">
+      <label class="field-label" for="tagRenameSource">当前标签<select id="tagRenameSource"></select></label>
+      <label class="field-label" for="tagRenameInput">新名字<input id="tagRenameInput" type="text" maxlength="100" required autocomplete="off"></label>
+    </div>
+    <p class="add-hint" id="tagRenameFeedback" role="status" aria-live="polite"></p>
+    <div class="modal-actions">
+      <button class="btn-utility" id="tagRenameClose" type="button">完成</button>
+      <button class="btn-pill btn-primary" type="submit">保存改名</button>
+    </div>
+  </form>
+</div>
+
 <div class="modal-backdrop open" id="accessModal" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
   <form class="modal-box access-box" id="accessForm">
     <h3 id="accessTitle">你的私人放映室。</h3>
@@ -748,7 +767,7 @@ const STORAGE_KEY = 'random-video-pool';
 const $ = id => document.getElementById(id);
 const randomBtn = $('randomBtn');
 const drawScopeOptions = $('drawScopeOptions');
-let drawScope = 'all';
+let selectedDrawTags = null; // null: all tags and untagged; Set: chosen tags (null means untagged)
 const resultCard = $('resultArea');
 const slotText = $('slotText');
 const slotTrack = $('slotTrack');
@@ -989,26 +1008,36 @@ function esc(s) {
 }
 
 // ---------- Draw scope ----------
-function getDrawPool(list = videos, scope = drawScope) {
-  const tag = scope === 'movie' ? '电影' : scope === 'creator' ? 'up主' : null;
-  return list.filter(video => !video.watched && (!tag || (video.tags || []).some(value =>
-    String(value).normalize('NFKC').toLowerCase().replace(/\s+/g, '') === tag)));
+function getDrawOptions(list = videos) {
+  const tags = [...new Set(list.flatMap(video => video.tags || []))].sort();
+  if (list.some(video => !(video.tags || []).length)) tags.push(null);
+  return tags;
+}
+function getDrawPool(list = videos, selected = selectedDrawTags) {
+  return list.filter(video => !video.watched && (selected === null ||
+    ((video.tags || []).length ? video.tags.some(tag => selected.has(tag)) : selected.has(null))));
 }
 function renderDrawScope() {
-  drawScopeOptions.querySelectorAll('button').forEach(button => {
-    const selected = button.dataset.drawScope === drawScope;
-    button.classList.toggle('active', selected);
-    button.setAttribute('aria-pressed', String(selected));
-    button.disabled = isRolling;
-  });
+  const options = getDrawOptions();
+  const allSelected = selectedDrawTags === null || (options.length > 0 && options.every(tag => selectedDrawTags.has(tag)));
+  drawScopeOptions.innerHTML = `<div class="draw-scope-actions">
+    <button type="button" class="btn-utility${allSelected ? ' active' : ''}" data-draw-action="all" aria-pressed="${allSelected}">全选</button>
+    <button type="button" class="btn-utility" data-draw-action="clear">清空</button>
+  </div><div class="draw-tag-options">${options.map((tag, index) => {
+    const selected = selectedDrawTags === null || selectedDrawTags.has(tag);
+    return `<button type="button" class="btn-utility${selected ? ' active' : ''}" data-draw-tag-index="${index}" aria-pressed="${selected}">${tag === null ? '无标签' : esc(tag)}</button>`;
+  }).join('')}</div>`;
+  drawScopeOptions.querySelectorAll('button').forEach(button => { button.disabled = isRolling; });
+  $('manageTagsBtn').disabled = isRolling || !allTags().length;
   const count = getDrawPool().length;
-  $('drawPoolCount').textContent = count ? `${count} 项未看收藏可抽取` : '这个范围暂时没有未看的收藏';
+  $('drawPoolCount').textContent = selectedDrawTags !== null && !selectedDrawTags.size
+    ? '请至少选择一个标签，或点击全选'
+    : count ? `${count} 项未看收藏可抽取` : '所选范围暂时没有未看的收藏';
 }
 function emptyDrawMessage() {
   if (!videos.length) return '下一场精彩，等你收藏';
-  if (getDrawPool().length) return '为今晚选一部好故事';
-  return drawScope === 'movie' ? '暂时没有未看的电影' :
-    drawScope === 'creator' ? '暂时没有未看的 UP 主' : '暂时没有未看的作品';
+  if (selectedDrawTags !== null && !selectedDrawTags.size) return '请先选择抽取标签';
+  return getDrawPool().length ? '为今晚选一部好故事' : '所选范围暂时没有未看的收藏';
 }
 function pickRandom() {
   const pool = getDrawPool();
@@ -1267,12 +1296,97 @@ function importData(jsonStr) {
 
 // --- Draw scope ---
 drawScopeOptions.addEventListener('click', event => {
-  const button = event.target.closest('button[data-draw-scope]');
-  if (!button || isRolling || !['all', 'movie', 'creator'].includes(button.dataset.drawScope)) return;
-  drawScope = button.dataset.drawScope;
+  const button = event.target.closest('button');
+  if (!button || !drawScopeOptions.contains(button) || isRolling) return;
+  if (button.dataset.drawAction === 'all') selectedDrawTags = null;
+  else if (button.dataset.drawAction === 'clear') selectedDrawTags = new Set();
+  else {
+    const options = getDrawOptions();
+    const index = Number(button.dataset.drawTagIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= options.length) return;
+    const tag = options[index];
+    if (selectedDrawTags === null) selectedDrawTags = new Set(options);
+    if (selectedDrawTags.has(tag)) selectedDrawTags.delete(tag);
+    else selectedDrawTags.add(tag);
+  }
   renderDrawScope();
   showResult(null);
   randomBtn.textContent = '为我选一部';
+});
+
+// --- Rename a tag across the collection ---
+function renameCollectionTag(from, value) {
+  const to = value.trim();
+  if (!to || to.length > 100 || /[,，]/.test(to)) return { error: '请填写 1–100 字的标签名，不能包含逗号。' };
+  if (!allTags().includes(from)) return { error: '这个标签已不存在，请关闭窗口后重新选择。' };
+  if (from === to) return { error: '新名字与当前标签相同。' };
+  const previous = videos;
+  let count = 0;
+  videos = videos.map(video => {
+    if (!(video.tags || []).includes(from)) return video;
+    count++;
+    return { ...video, tags: [...new Set(video.tags.map(tag => tag === from ? to : tag))] };
+  });
+  if (!save()) { videos = previous; return { error: '未能保存改名，请检查同步状态后重试。' }; }
+  if (activeTagFilter === from) activeTagFilter = to;
+  if (selectedDrawTags !== null && selectedDrawTags.has(from)) {
+    selectedDrawTags.delete(from);
+    selectedDrawTags.add(to);
+  }
+  return { from, to, count };
+}
+function refreshTagRenameOptions(selected) {
+  const host = $('tagRenameSource');
+  host.replaceChildren();
+  allTags().forEach(tag => {
+    const option = document.createElement('option');
+    option.value = option.textContent = tag;
+    host.append(option);
+  });
+  if (selected && allTags().includes(selected)) host.value = selected;
+  $('tagRenameInput').value = host.value;
+}
+function closeTagRename() {
+  $('tagRenameModal').classList.remove('open');
+  $('tagRenameModal').setAttribute('aria-hidden', 'true');
+  $('manageTagsBtn').focus();
+}
+$('manageTagsBtn').addEventListener('click', () => {
+  if (isRolling || !allTags().length) return;
+  refreshTagRenameOptions();
+  $('tagRenameFeedback').textContent = '';
+  $('tagRenameModal').classList.add('open');
+  $('tagRenameModal').setAttribute('aria-hidden', 'false');
+  $('tagRenameInput').focus();
+  $('tagRenameInput').select();
+});
+$('tagRenameSource').addEventListener('change', () => {
+  $('tagRenameInput').value = $('tagRenameSource').value;
+  $('tagRenameFeedback').textContent = '';
+  $('tagRenameInput').focus();
+  $('tagRenameInput').select();
+});
+$('tagRenameForm').addEventListener('submit', event => {
+  event.preventDefault();
+  if (isRolling) return;
+  const result = renameCollectionTag($('tagRenameSource').value, $('tagRenameInput').value);
+  if (result.error) { $('tagRenameFeedback').textContent = result.error; return; }
+  render();
+  const id = resultCard.dataset.videoId;
+  showResult(id ? videos.find(video => video.id === id) || null : null);
+  refreshTagRenameOptions(result.to);
+  $('tagRenameFeedback').textContent = `已将“${result.from}”改为“${result.to}”，更新 ${result.count} 项收藏。`;
+});
+$('tagRenameClose').addEventListener('click', closeTagRename);
+$('tagRenameModal').addEventListener('click', event => { if (event.target === $('tagRenameModal')) closeTagRename(); });
+$('tagRenameModal').addEventListener('keydown', event => {
+  if (event.key === 'Escape') { event.preventDefault(); closeTagRename(); }
+  if (event.key === 'Tab') {
+    const controls = [...$('tagRenameForm').querySelectorAll('select, input, button')];
+    const first = controls[0], last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
 });
 
 // --- Random ---
