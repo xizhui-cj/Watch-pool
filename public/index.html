@@ -426,6 +426,12 @@
   .random-zone { min-width: 0; padding: 35px 38px 28px; align-items: flex-start; text-align: left; position: relative; }
   .random-zone .eyebrow { font-size: 10px; letter-spacing: 2px; margin-bottom: 21px; }
   .random-zone .prompt { font: 34px/1.4 var(--serif); margin-bottom: 10px; }
+  .draw-scope { width: 100%; margin-bottom: 18px; }
+  .draw-scope-label { display: block; font-size: 11px; color: var(--body-muted); margin-bottom: 8px; }
+  .draw-scope-options { display: flex; gap: 4px; border: 1px solid var(--hairline); padding: 4px; }
+  .draw-scope-options .btn-utility { flex: 1; min-width: 0; min-height: 44px; padding: 8px 10px; white-space: nowrap; }
+  .draw-scope-options button:disabled { cursor: default; opacity: .65; }
+  .draw-pool-count { color: var(--body-muted); font-size: 11px; line-height: 1.6; margin-top: 8px; }
   .feature-copy { color: var(--body-muted); font-size: 12px; line-height: 1.9; margin-bottom: 22px; }
   .random-btn { font-size: 13px; font-weight: 500; padding: 13px 25px; border-radius: 2px; letter-spacing: 2px; }
   .random-btn::after { content: "↗"; margin-left: 16px; font-size: 17px; }
@@ -580,6 +586,15 @@
   <div class="card random-zone">
     <div class="eyebrow">TONIGHT’S SCREENING / 今夜放映</div>
     <div class="prompt">让好故事，<br>不期而遇。</div><p class="feature-copy">从未看的收藏里，抽取一段未知的时光。</p>
+    <div class="draw-scope">
+      <span class="draw-scope-label" id="drawScopeLabel">抽取范围</span>
+      <div class="draw-scope-options" id="drawScopeOptions" role="group" aria-labelledby="drawScopeLabel">
+        <button type="button" class="btn-utility active" data-draw-scope="all" aria-pressed="true">全部</button>
+        <button type="button" class="btn-utility" data-draw-scope="movie" aria-pressed="false">电影</button>
+        <button type="button" class="btn-utility" data-draw-scope="creator" aria-pressed="false">UP 主</button>
+      </div>
+      <p class="draw-pool-count" id="drawPoolCount" role="status"></p>
+    </div>
     <button class="random-btn" id="randomBtn">为我选一部</button>
 
     <div class="result-area" id="resultArea">
@@ -732,6 +747,8 @@ const STORAGE_KEY = 'random-video-pool';
 // ---------- DOM refs ----------
 const $ = id => document.getElementById(id);
 const randomBtn = $('randomBtn');
+const drawScopeOptions = $('drawScopeOptions');
+let drawScope = 'all';
 const resultCard = $('resultArea');
 const slotText = $('slotText');
 const slotTrack = $('slotTrack');
@@ -927,6 +944,7 @@ function filteredVideos() {
 
 // ---------- Render ----------
 function render() {
+  renderDrawScope();
   renderTagSuggestions();
   if (addMode === 'batch') renderBatchPreview();
   const list = filteredVideos();
@@ -970,11 +988,31 @@ function esc(s) {
   return d.innerHTML;
 }
 
-// ---------- Random pick ----------
+// ---------- Draw scope ----------
+function getDrawPool(list = videos, scope = drawScope) {
+  const tag = scope === 'movie' ? '电影' : scope === 'creator' ? 'up主' : null;
+  return list.filter(video => !video.watched && (!tag || (video.tags || []).some(value =>
+    String(value).normalize('NFKC').toLowerCase().replace(/\s+/g, '') === tag)));
+}
+function renderDrawScope() {
+  drawScopeOptions.querySelectorAll('button').forEach(button => {
+    const selected = button.dataset.drawScope === drawScope;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+    button.disabled = isRolling;
+  });
+  const count = getDrawPool().length;
+  $('drawPoolCount').textContent = count ? `${count} 项未看收藏可抽取` : '这个范围暂时没有未看的收藏';
+}
+function emptyDrawMessage() {
+  if (!videos.length) return '下一场精彩，等你收藏';
+  if (getDrawPool().length) return '为今晚选一部好故事';
+  return drawScope === 'movie' ? '暂时没有未看的电影' :
+    drawScope === 'creator' ? '暂时没有未看的 UP 主' : '暂时没有未看的作品';
+}
 function pickRandom() {
-  const pool = filteredVideos().filter(v => !v.watched);
-  if (!pool.length) return null;
-  return pool[Math.floor(Math.random() * pool.length)];
+  const pool = getDrawPool();
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
 }
 
 // Render a single static line (centered) into the slot viewport
@@ -993,7 +1031,7 @@ function showResult(video) {
   resultCard.style.display = 'flex';
   if (!video) {
     delete resultCard.dataset.videoId;
-    setSlotStatic(!videos.length ? '下一场精彩，等你收藏' : filteredVideos().some(video => !video.watched) ? '为今晚选一部好故事' : '暂时没有未看的作品');
+    setSlotStatic(emptyDrawMessage());
     resultTags.innerHTML = '';
     resultUrl.href = '#';
     resultUrl.style.display = 'none';
@@ -1045,7 +1083,7 @@ function buildRollItems(pool, finalVideo) {
 
 function startRolling() {
   if (isRolling) return;
-  const pool = filteredVideos().filter(video => !video.watched);
+  const pool = getDrawPool();
   if (!pool.length) {
     showResult(null);
     return;
@@ -1059,6 +1097,7 @@ function startRolling() {
   }
 
   isRolling = true;
+  renderDrawScope();
   randomBtn.disabled = true;
   randomBtn.textContent = '转动中…';
   resultCard.style.display = 'flex';
@@ -1093,6 +1132,7 @@ function startRolling() {
     showResult(videos.find(video => video.id === finalVideo.id) || null);
     updateRollProgress(0);
     isRolling = false;
+    renderDrawScope();
     randomBtn.textContent = '再来一次';
     randomBtn.disabled = false;
   };
@@ -1224,6 +1264,16 @@ function importData(jsonStr) {
 // ============================================================
 //  Event Bindings
 // ============================================================
+
+// --- Draw scope ---
+drawScopeOptions.addEventListener('click', event => {
+  const button = event.target.closest('button[data-draw-scope]');
+  if (!button || isRolling || !['all', 'movie', 'creator'].includes(button.dataset.drawScope)) return;
+  drawScope = button.dataset.drawScope;
+  renderDrawScope();
+  showResult(null);
+  randomBtn.textContent = '为我选一部';
+});
 
 // --- Random ---
 randomBtn.addEventListener('click', () => {
